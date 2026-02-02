@@ -21,8 +21,12 @@ RUN pip install --no-cache-dir fastapi uvicorn httpx python-multipart
 # 4. 复制代码
 COPY main.py .
 
-# 5. 暴露端口
+# 5. 创建存储目录并声明卷
+RUN mkdir -p /data
+VOLUME /data
+
+# 6. 暴露端口
 EXPOSE 8000
 
-# 6. 启动命令
+# 7. 启动命令
 CMD ["python", "main.py"]

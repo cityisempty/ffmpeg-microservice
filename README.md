@@ -6,7 +6,8 @@
 
 - ✅ **并发下载**：使用 `httpx` 异步下载多个视频文件
 - ✅ **极速拼接**：FFmpeg `-c copy` 无转码拼接
-- ✅ **流式响应**：支持 MP4 流式传输，无需等待完整文件生成
+- ✅ **双模式支持**：流式返回 或 保存到磁盘
+- ✅ **文件管理**：列出、下载、删除已保存的文件
 
 ## 快速开始
 
@@ -16,8 +17,11 @@
 # 构建镜像
 docker build -t ffmpeg-microservice .
 
-# 运行容器
+# 运行容器（流式模式，不挂载卷）
 docker run -d -p 8000:8000 ffmpeg-microservice
+
+# 运行容器（带挂载卷，支持文件持久化）
+docker run -d -p 8000:8000 -v $(pwd)/videos:/data ffmpeg-microservice
 ```
 
 ### 本地开发
@@ -26,11 +30,18 @@ docker run -d -p 8000:8000 ffmpeg-microservice
 # 安装依赖
 pip install -r requirements.txt
 
+# 设置存储目录（可选）
+export STORAGE_DIR=./videos
+
 # 启动服务
 python main.py
 ```
 
 ## API 使用
+
+### GET /health
+
+健康检查。
 
 ### POST /merge
 
@@ -40,26 +51,58 @@ python main.py
 
 ```json
 {
-  "urls": [
-    "https://example.com/video1.mp4",
-    "https://example.com/video2.mp4",
-    "https://example.com/video3.mp4"
-  ]
+  "urls": ["https://example.com/v1.mp4", "https://example.com/v2.mp4"],
+  "save_to_disk": false,
+  "filename": "my_video"
 }
 ```
 
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `urls` | array | 必填 | 视频 URL 列表（至少2个） |
+| `save_to_disk` | bool | `false` | `true` 保存到磁盘，`false` 流式返回 |
+| `filename` | string | 自动生成 | 自定义文件名（仅 save_to_disk=true 时有效） |
+
 **响应：**
 
-返回合并后的 MP4 视频流。
+- `save_to_disk=false`：返回 MP4 视频流
+- `save_to_disk=true`：返回 JSON
+
+```json
+{
+  "status": "success",
+  "filename": "my_video.mp4",
+  "download_url": "/files/my_video.mp4",
+  "file_path": "/data/my_video.mp4"
+}
+```
 
 **示例：**
 
 ```bash
+# 流式下载
 curl -X POST http://localhost:8000/merge \
   -H "Content-Type: application/json" \
-  -d '{"urls": ["https://example.com/v1.mp4", "https://example.com/v2.mp4"]}' \
+  -d '{"urls": ["url1.mp4", "url2.mp4"]}' \
   --output merged.mp4
+
+# 保存到服务器
+curl -X POST http://localhost:8000/merge \
+  -H "Content-Type: application/json" \
+  -d '{"urls": ["url1.mp4", "url2.mp4"], "save_to_disk": true, "filename": "demo"}'
 ```
+
+### GET /files
+
+列出所有已保存的文件。
+
+### GET /files/{filename}
+
+下载指定文件。
+
+### DELETE /files/{filename}
+
+删除指定文件。
 
 ## 技术栈
 
