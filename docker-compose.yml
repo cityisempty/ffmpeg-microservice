@@ -1,0 +1,26 @@
+services:
+  ffmpeg-api:
+    build: .
+    # 或者使用已构建的镜像：
+    # image: ffmpeg-microservice:latest
+    container_name: ffmpeg-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./videos:/data
+    environment:
+      - STORAGE_DIR=/data
+      - API_KEY=${API_KEY:-your_secret_key_here}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - baota_net
+
+networks:
+  baota_net:
+    external: true

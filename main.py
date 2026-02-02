@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Body, Query
+from fastapi import FastAPI, HTTPException, Body, Query, Header, Depends
 from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 import subprocess
 import httpx
@@ -12,8 +13,17 @@ from typing import List, Optional
 
 app = FastAPI(title="FFmpeg Video Merge Microservice")
 
-# 持久化存储目录（需要挂载卷）
+# 环境变量配置
 STORAGE_DIR = os.environ.get("STORAGE_DIR", "/data")
+API_KEY = os.environ.get("API_KEY")
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def verify_api_key(api_key: str = Depends(api_key_header)):
+    if not API_KEY:
+        return  # 如果未设置 API_KEY，则跳过校验（仅用于测试环境）
+    if api_key != API_KEY:
+        raise HTTPException(status_code=403, detail="Could not validate credentials")
 
 
 class MergeRequest(BaseModel):
@@ -63,7 +73,7 @@ async def health_check():
     return {"status": "ok", "storage_dir": STORAGE_DIR}
 
 
-@app.post("/merge")
+@app.post("/merge", dependencies=[Depends(verify_api_key)])
 async def merge_videos(request: MergeRequest):
     """
     合并多个视频
@@ -121,7 +131,7 @@ async def merge_videos(request: MergeRequest):
             )
 
 
-@app.get("/files/{filename}")
+@app.get("/files/{filename}", dependencies=[Depends(verify_api_key)])
 async def download_file_endpoint(filename: str):
     """下载已保存的文件"""
     file_path = os.path.join(STORAGE_DIR, filename)
@@ -134,7 +144,7 @@ async def download_file_endpoint(filename: str):
     )
 
 
-@app.get("/files")
+@app.get("/files", dependencies=[Depends(verify_api_key)])
 async def list_files():
     """列出所有已保存的文件"""
     if not os.path.exists(STORAGE_DIR):
@@ -152,7 +162,7 @@ async def list_files():
     return {"files": files}
 
 
-@app.delete("/files/{filename}")
+@app.delete("/files/{filename}", dependencies=[Depends(verify_api_key)])
 async def delete_file(filename: str):
     """删除已保存的文件"""
     file_path = os.path.join(STORAGE_DIR, filename)

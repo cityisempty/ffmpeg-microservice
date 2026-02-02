@@ -47,6 +47,9 @@ python main.py
 
 合并多个视频文件。
 
+**Header:**
+`X-API-Key: your_secret_key`
+
 **请求体：**
 
 ```json
