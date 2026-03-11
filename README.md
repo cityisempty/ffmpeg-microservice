@@ -95,6 +95,41 @@ curl -X POST http://localhost:8000/merge \
   -d '{"urls": ["url1.mp4", "url2.mp4"], "save_to_disk": true, "filename": "demo"}'
 ```
 
+### POST /extract-frame
+
+提取视频及其最后一帧图片（极速模式）。
+
+**请求体：**
+
+```json
+{
+  "url": "https://example.com/video.mp4",
+  "save_to_disk": true,
+  "filename": "my_frame"
+}
+```
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `url` | string | 必填 | 视频源 URL |
+| `save_to_disk` | bool | `true` | `true` 保存到磁盘，`false` 流式返回 |
+| `filename` | string | 自动生成 | 自定义文件名（仅 save_to_disk=true 时有效） |
+
+**响应：**
+
+- `save_to_disk=false`：返回 JPEG 图片流
+- `save_to_disk=true`：返回 JSON 结构体
+
+**示例：**
+
+```bash
+# 获取图片并保存到服务器
+curl -X POST http://localhost:8000/extract-frame \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your_key" \
+  -d '{"url": "https://example.com/v.mp4", "save_to_disk": true}'
+```
+
 ### GET /files
 
 列出所有已保存的文件。

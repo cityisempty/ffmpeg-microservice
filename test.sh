@@ -72,6 +72,13 @@ echo "     -H '$AUTH_HEADER' \\"
 echo "     -d '{\"urls\": [\"VIDEO_URL_1\", \"VIDEO_URL_2\"], \"save_to_disk\": true}'"
 
 echo ""
+echo "   提取帧手动测试命令:"
+echo "   curl -X POST $BASE_URL/extract-frame \\"
+echo "     -H 'Content-Type: application/json' \\"
+echo "     -H '$AUTH_HEADER' \\"
+echo "     -d '{\"url\": \"VIDEO_URL\", \"save_to_disk\": true}'"
+
+echo ""
 echo "=========================================="
 echo "基础测试完成！"
 echo "=========================================="
